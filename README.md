@@ -1,27 +1,35 @@
 # Artifact Evaluation README
 **Paper**: Blockaid: Data Access Policy Enforcement for Web Applications (OSDI '22)
 
-[PDF version of this README](https://raw.githubusercontent.com/blockaid-project/artifact-eval/main/Blockaid%20Artifact%20Evaluation%20README.pdf).
+[PDF version of this README](README.pdf).
 
 (The submission title was Embargo: Data Access Policy Enforcement for Web Applications. The submission used the system name “Embargo” for blinding, and the system is referred to as Embargo in the comparison plots.)
 
 ## Getting Started Instructions
-The artifact consists of a Docker image that:
-* Launches six Amazon EC2 c4.8xlarge instances to run experiments in parallel.
+The artifact consists of a [Docker image](https://hub.docker.com/repository/docker/blockaid/ae) that:
+* Launches Amazon EC2 instances on your behalf to run the experiments.
 * Generates Figure 5, Table 2, and Figure 8 from the paper.
 * Produces a PDF that compares the generated figures with those from the paper.
 
 ### Amazon EC2
-To be able to launch Amazon EC2 instances, the artifact requires AWS credentials with appropriate EC2 permissions (e.g., `AmazonEC2FullAccess` suffices). Please note down your AWS Access Key and Secret Key for later use.
+The Blockaid experiments run on Amazon EC2 c4.8xlarge instances.
+By default, the artifact launches six such instances (totaling 36×6=216 vCPUs) to run experiments in parallel, although it provides an option to launch fewer instances at a time (see the Test Run section).
+
+To be able to launch EC2 instances, the artifact requires AWS credentials with appropriate EC2 permissions (e.g., `AmazonEC2FullAccess` suffices). Please note down your AWS Access Key and Secret Key for later use.
 
 By default, the artifact will launch EC2 instances in the **us-east-2** (Ohio) region from our public image `ami-01457e9b6b7cdee4e`, which contains Blockaid and the web applications under evaluation. If you would like to launch the experiments in another region, please [copy](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/CopyingAMIs.html) the image to the desired region and note down its AMI ID. Alternatively, [import](https://docs.aws.amazon.com/vm-import/latest/userguide/vmimport-image-import.html) this VM image (6.5 GB) as an AMI in your desired region: https://blockaid-ae.s3.us-east-2.amazonaws.com/export-ami-0d21f4fd779d80014.vmdk.
 
 ### Test Run
-On a machine with [Docker installed](https://docs.docker.com/get-docker/), create a directory to store the output of a test run:
+On a machine with [Docker installed](https://docs.docker.com/get-docker/), pull the latest version of the Docker image:
+```
+docker pull blockaid/ae:buildx-latest
+```
+
+Create a directory to store the output of a **test run**:
 ```
 mkdir /home/ubuntu/blockaid_test
 ```
-Download and launch the Docker image  with the directory mounted (prepend with sudo if necessary):
+Launch the Docker image with the directory mounted:
 ```
 docker run -it --rm --name blockaid_test --mount \
   type=bind,source=/home/ubuntu/blockaid_test,target=/data \
@@ -31,10 +39,18 @@ You should now see a command prompt:
 ```
 root@9bc6f02e8a8c:/app#
 ```
-Start the experiment script in “test mode”, which measures a small number of iterations and should finish in roughly **25 minutes**:
+Let’s start the experiment script in "test mode", which measures a small number of iterations.
+By default, the script launches six c4.8xlarge instances in parallel:
 ```
 root@9bc6f02e8a8c:/app# ./run_all.sh test
+```
+You can adjust the degree of instance parallelism using the `PARALLEL` environment variable.
+For example, to run at most one EC2 instance at a time:
+```
+root@9bc6f02e8a8c:/app# PARALLEL=1 ./run_all.sh test
+```
 You will be prompted for your AWS credentials and other information:
+```
 AWS credentials not found...
 AWS Access Key ID: xxxx ↵
 AWS Secret Access Key: xxxx ↵
@@ -44,7 +60,9 @@ EC2 AMI ID [default: ami-01457e9b6b7cdee4e]: ↵
 
 (If you need to later modify your AWS credentials, you can do so by manually editing the file `.credentials.sh` using the nano text editor, or by deleting `.credentials.sh` and re-running `run_all.sh`.)
 
-The script will now launch the test experiment on EC2, gather the results, delete the AWS resources, and produce a report file in the output directory named `all_plots.pdf`. You may view the PDF the host machine (i.e., outside the container).
+The script will now launch the test experiment on EC2, gather the results, delete the AWS resources, and produce a report file in the output directory named `all_plots.pdf`.
+This process should finish within **25 minutes** under the default configuration (i.e., full parallelism), and within 2 hours under sequential execution (i.e., `PARALLEL=1`).
+You may view the PDF the host machine (i.e., outside the container).
 
 (If the script fails or is killed mid-way, you can manually clean up the AWS resources created for the experiment by calling `./cleanup.sh` within the container.)
 
@@ -55,15 +73,15 @@ Exit the Docker container by pressing Ctrl-D.
 ### Detailed Instructions
 The artifact supports three modes, each taking a different amount of time:
 
-| Mode      | Expected duration |
-| ----------- | ----------- |
-| `test`      | 25 min       |
-| `small`   | 1 hr 40 min        |
-| `full`      | 15 hr       |
+| Mode      | Expected duration (full parallelism) | Expected duration (`PARALLEL=1`) |
+| ----------- | ----------- | ----------- |
+| `test`      | 25 min       | 2 hr |
+| `small`   | 1 hr 40 min        | 8 hr |
+| `full`      | 15 hr       | |
 
 When starting an experiment, you can pass the mode name as a command line argument to `run_all.sh`, like we did with the `test` mode just now. The `full` mode corresponds to the experiment setup reported in the paper submission, and the `small` mode allows an experiment that is less accurate but faster than the full version.
 
-You can choose to run either the `small` or the `full` experiment. Here is an example for running the small experiment:
+You can choose to run either the `small` or the `full` experiment. Here is an example for running the small experiment (again, you can limit instance parallelism by passing the `PARALLEL` environment variable to `run_all.sh`):
 ```
 mkdir /home/ubuntu/blockaid_small
 docker run -it --rm --name blockaid_test --mount \

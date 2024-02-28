@@ -6,7 +6,7 @@
 ## Getting Started Instructions
 The entry point to this artifact is a [Docker image](https://hub.docker.com/repository/docker/blockaid/ae), which contains scripts that:
 * Launches Amazon EC2 instances on your behalf to run the experiments.
-* Generates Figure 5, Table 2, and Figure 8 from the paper.
+* Generates Figure 2, Table 2, and Figure 3 from the paper.
 * Produces a PDF that compares the generated figures with those from the paper.
 
 ### Amazon EC2
@@ -140,4 +140,4 @@ AWS region [default: us-east-2]: ↵
 EC2 AMI ID [default: ami-01457e9b6b7cdee4e]: ↵
 ...
 ```
-Once again, inspect the report at `all_plots.pdf` in the output directory. The smaller the run, the higher the measured latencies are expected to be due to fewer warmup iterations. However, for the small experiment (and, of course, the full experiment) we do expect the relative latencies to match what is reported in the submission – e.g., the relative positions of points in Figure 5. (The same cannot be said of the test experiment, which is too short to yield stable measurements.)
+Once again, inspect the report at `all_plots.pdf` in the output directory. The smaller the run, the higher the measured latencies are expected to be due to fewer warmup iterations. However, for the small experiment (and, of course, the full experiment) we do expect the relative latencies to match what is reported in the submission – e.g., the relative positions of points in Figure 2. (The same cannot be said of the test experiment, which is too short to yield stable measurements.)
